@@ -10,7 +10,7 @@ import tempfile
 import logging
 from pathlib import Path
 
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, send_file, jsonify, send_from_directory
 from flask_cors import CORS
 import yt_dlp
 
@@ -20,6 +20,15 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)  # Permite peticiones desde el frontend (origen cruzado)
+
+# Servir el frontend estático desde la carpeta 'frontend'
+@app.route('/')
+def serve_frontend():
+    return send_from_directory('frontend', 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('frontend', path)
 
 # Carpeta temporal para descargas (se limpia automáticamente al cerrar)
 DOWNLOAD_DIR = Path(tempfile.gettempdir()) / "voiddown_downloads"
@@ -216,7 +225,7 @@ if __name__ == '__main__':
     print("\n" + "="*50)
     print("🚀 VoidDown Backend iniciado")
     print(f"📁 Archivos temporales en: {DOWNLOAD_DIR}")
-    print("🌐 Escuchando en http://localhost:5000")
+    print("🌐 Escuchando en http://localhost:80")
     print("="*50 + "\n")
-    app.run(host='0.0.0.0', port=5001, debug=True, threaded=True)
+    app.run(host='0.0.0.0', port=80, debug=True, threaded=True)
 
