@@ -36,6 +36,7 @@ BASE_OPTS = {
     'geo_bypass_country': 'US',
     'concurrent_fragment_downloads': 8,
     'buffersize': 1024 * 1024,
+    'cookiefile': 'cookies.txt',
 }
 
 # ----- Servir el frontend -----
