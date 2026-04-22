@@ -2,21 +2,20 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Instalar FFmpeg (necesario para yt-dlp en conversiones)
+# Instalar FFmpeg
 RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
-# Copiar e instalar dependencias Python
+# Copiar dependencias
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar el backend
+# Copiar backend
 COPY backend.py .
 
-# Copiar el frontend (carpeta completa)
+# Copiar frontend
 COPY frontend ./frontend
 
-# Exponer puerto 80
 EXPOSE 80
 
-# Comando de inicio
+# Comando de inicio (con exec para manejar señales correctamente)
 CMD ["python", "backend.py"]
