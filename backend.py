@@ -1,5 +1,5 @@
 """
-VoidDown Backend Unificado (Frontend + API) con máxima protección anti-bloqueo
+VoidDown Backend Unificado (Frontend + API) para Render
 """
 import os
 import re
@@ -12,7 +12,7 @@ from flask import Flask, request, send_file, jsonify, send_from_directory
 from flask_cors import CORS
 import yt_dlp
 
-# Configurar logging para que salga en los logs de Back4app
+# Configurar logging para que salga en los logs de Render
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -25,10 +25,12 @@ CORS(app)
 DOWNLOAD_DIR = Path(tempfile.gettempdir()) / "voiddown_downloads"
 DOWNLOAD_DIR.mkdir(exist_ok=True)
 
-# --- Manejo de cookies desde variable de entorno ---
+# --- Manejo de cookies desde variable de entorno (Render) ---
 cookies_content = os.environ.get('YOUTUBE_COOKIES', '')
 cookies_path = None
 if cookies_content:
+    # Render pasa el contenido como string; puede contener '\n' literales
+    cookies_content = cookies_content.replace('\\n', '\n')
     with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
         f.write(cookies_content)
         cookies_path = f.name
@@ -53,7 +55,7 @@ BASE_OPTS = {
     'file_access_retries': 5,
     'geo_bypass': True,
     'geo_bypass_country': 'US',
-    'concurrent_fragment_downloads': 2,          # Menos concurrencia = menos detección
+    'concurrent_fragment_downloads': 2,
     'buffersize': 1024 * 1024,
     'force_ipv4': True,
     'cookiefile': cookies_path if cookies_path else None,
@@ -71,13 +73,12 @@ BASE_OPTS = {
             'skip': ['dash', 'hls'],
         }
     },
-    # Pequeña pausa entre fragmentos y solicitudes
     'sleep_interval': 2,
     'max_sleep_interval': 5,
     'sleep_interval_requests': 1,
 }
 
-# ----- Servir el frontend -----
+# ----- Servir el frontend estático (opcional) -----
 @app.route('/')
 def serve_index():
     return send_from_directory('frontend', 'index.html')
@@ -203,9 +204,10 @@ signal.signal(signal.SIGTERM, handle_sigterm)
 signal.signal(signal.SIGINT, handle_sigterm)
 
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 10000))
     logger.info("="*50)
-    logger.info("🚀 VoidDown Backend + Frontend unificados")
+    logger.info("🚀 VoidDown Backend listo para Render")
     logger.info(f"📁 Archivos temporales en: {DOWNLOAD_DIR}")
-    logger.info("🌐 Escuchando en http://0.0.0.0:80")
+    logger.info(f"🌐 Escuchando en http://0.0.0.0:{port}")
     logger.info("="*50)
-    app.run(host='0.0.0.0', port=80, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
