@@ -30,13 +30,23 @@ BASE_OPTS = {
     'extract_flat': False,
     'noplaylist': True,
     'socket_timeout': 30,
-    'retries': 3,
-    'fragment_retries': 3,
+    'retries': 5,
+    'fragment_retries': 5,
     'geo_bypass': True,
     'geo_bypass_country': 'US',
     'concurrent_fragment_downloads': 8,
     'buffersize': 1024 * 1024,
+    # Opciones anti-bot
     'cookiefile': 'cookies.txt',
+    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'extractor_args': {
+        'youtube': {
+            'player_client': ['android', 'web'],
+            'skip': ['dash', 'hls'],
+        }
+    },
+    # Forzar IPv4 (a veces evita bloqueos)
+    'force_ipv4': True,
 }
 
 # ----- Servir el frontend -----
