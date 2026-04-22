@@ -1,5 +1,5 @@
 """
-VoidDown Backend Unificado (Frontend + API) con soporte anti-bloqueo YouTube
+VoidDown Backend Unificado (Frontend + API) con máxima protección anti-bloqueo
 """
 import os
 import re
@@ -29,45 +29,52 @@ DOWNLOAD_DIR.mkdir(exist_ok=True)
 cookies_content = os.environ.get('YOUTUBE_COOKIES', '')
 cookies_path = None
 if cookies_content:
-    # Escribir cookies en un archivo temporal
     with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
         f.write(cookies_content)
         cookies_path = f.name
     logger.info("Cookies cargadas desde variable de entorno")
 else:
-    # Si no hay variable, intentar usar archivo local cookies.txt
     if Path('cookies.txt').exists():
         cookies_path = 'cookies.txt'
         logger.info("Usando archivo cookies.txt local")
     else:
         logger.warning("No se encontraron cookies. Algunos videos podrían fallar.")
 
-# --- Opciones base optimizadas para evitar bloqueos ---
+# --- Opciones base ULTRA reforzadas contra bloqueos ---
 BASE_OPTS = {
     'quiet': True,
     'no_warnings': True,
     'extract_flat': False,
     'noplaylist': True,
-    'socket_timeout': 30,
-    'retries': 5,
-    'fragment_retries': 5,
+    'socket_timeout': 60,
+    'retries': 10,
+    'fragment_retries': 10,
+    'extractor_retries': 5,
+    'file_access_retries': 5,
     'geo_bypass': True,
     'geo_bypass_country': 'US',
-    'concurrent_fragment_downloads': 4,       # Reducir paralelismo para no saturar
+    'concurrent_fragment_downloads': 2,          # Menos concurrencia = menos detección
     'buffersize': 1024 * 1024,
     'force_ipv4': True,
-    # Anti-bot: cookies, user-agent y cliente Android
     'cookiefile': cookies_path if cookies_path else None,
-    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    'http_headers': {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-us,en;q=0.5',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+    },
     'extractor_args': {
         'youtube': {
-            'player_client': ['android', 'web'],
+            'player_client': ['android', 'ios', 'web'],
+            'player_skip': ['configs', 'webpage'],
             'skip': ['dash', 'hls'],
         }
     },
-    # Pequeña pausa entre fragmentos para no parecer bot
-    'sleep_interval': 1,
-    'max_sleep_interval': 3,
+    # Pequeña pausa entre fragmentos y solicitudes
+    'sleep_interval': 2,
+    'max_sleep_interval': 5,
+    'sleep_interval_requests': 1,
 }
 
 # ----- Servir el frontend -----
@@ -186,10 +193,8 @@ def cleanup_old_files(max_age_minutes=60):
             except Exception as e:
                 logger.warning(f"No se pudo eliminar {f}: {e}")
 
-# Manejo de señales para que el contenedor no muera abruptamente
 def handle_sigterm(*args):
     logger.info("Recibida señal de terminación. Cerrando...")
-    # Limpiar archivo temporal de cookies si se creó
     if cookies_path and cookies_path != 'cookies.txt' and Path(cookies_path).exists():
         Path(cookies_path).unlink()
     exit(0)
