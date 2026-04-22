@@ -1,5 +1,5 @@
 """
-VoidDown Backend para Render con máxima protección anti-bloqueo
+VoidDown Backend para Render - Versión estable anti-bloqueo
 """
 import os
 import re
@@ -73,7 +73,7 @@ BASE_OPTS = {
     'sleep_interval_requests': 1,
 }
 
-# ----- Servir frontend (opcional, Render puede servir el backend y frontend juntos) -----
+# ----- Servir frontend (opcional) -----
 @app.route('/')
 def serve_index():
     return send_from_directory('frontend', 'index.html')
@@ -209,21 +209,3 @@ if __name__ == '__main__':
     logger.info(f"🌐 Puerto: {port}")
     logger.info("="*50)
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
-
-# ... (todos tus imports anteriores)
-from yt_dlp_plugins.extractor import pot_provider
-
-# ... (código de setup_cookies, etc.)
-
-BASE_OPTS = {
-    # ... (el resto de tus opciones)
-    'extractor_args': {
-        'youtube': {
-            'player_client': ['android', 'ios', 'web'],
-            'skip': ['dash', 'hls'],
-            # --- Línea clave para el PO Token ---
-            'po_token': pot_provider.get_pot(),
-        }
-    },
-    # ... (más opciones)
-}
