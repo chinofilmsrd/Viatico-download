@@ -12,6 +12,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar el backend
 COPY backend.py .
 
+# Copiar cookies.txt para autenticación con YouTube
+COPY cookies.txt .
+
 # Copiar el frontend (carpeta completa)
 COPY frontend ./frontend
 
