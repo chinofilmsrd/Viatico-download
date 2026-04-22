@@ -1,8 +1,9 @@
 """
-VoidDown Backend Unificado (Frontend + API)
+VoidDown Backend Unificado (Frontend + API) con soporte anti-bloqueo YouTube
 """
 import os
 import re
+import time
 import tempfile
 import logging
 import signal
@@ -11,7 +12,7 @@ from flask import Flask, request, send_file, jsonify, send_from_directory
 from flask_cors import CORS
 import yt_dlp
 
-# Configurar logging para que salga en los logs de Back4App
+# Configurar logging para que salga en los logs de Back4app
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -24,6 +25,24 @@ CORS(app)
 DOWNLOAD_DIR = Path(tempfile.gettempdir()) / "voiddown_downloads"
 DOWNLOAD_DIR.mkdir(exist_ok=True)
 
+# --- Manejo de cookies desde variable de entorno ---
+cookies_content = os.environ.get('YOUTUBE_COOKIES', '')
+cookies_path = None
+if cookies_content:
+    # Escribir cookies en un archivo temporal
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+        f.write(cookies_content)
+        cookies_path = f.name
+    logger.info("Cookies cargadas desde variable de entorno")
+else:
+    # Si no hay variable, intentar usar archivo local cookies.txt
+    if Path('cookies.txt').exists():
+        cookies_path = 'cookies.txt'
+        logger.info("Usando archivo cookies.txt local")
+    else:
+        logger.warning("No se encontraron cookies. Algunos videos podrían fallar.")
+
+# --- Opciones base optimizadas para evitar bloqueos ---
 BASE_OPTS = {
     'quiet': True,
     'no_warnings': True,
@@ -34,10 +53,11 @@ BASE_OPTS = {
     'fragment_retries': 5,
     'geo_bypass': True,
     'geo_bypass_country': 'US',
-    'concurrent_fragment_downloads': 8,
+    'concurrent_fragment_downloads': 4,       # Reducir paralelismo para no saturar
     'buffersize': 1024 * 1024,
-    # Opciones anti-bot
-    'cookiefile': 'cookies.txt',
+    'force_ipv4': True,
+    # Anti-bot: cookies, user-agent y cliente Android
+    'cookiefile': cookies_path if cookies_path else None,
     'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'extractor_args': {
         'youtube': {
@@ -45,8 +65,9 @@ BASE_OPTS = {
             'skip': ['dash', 'hls'],
         }
     },
-    # Forzar IPv4 (a veces evita bloqueos)
-    'force_ipv4': True,
+    # Pequeña pausa entre fragmentos para no parecer bot
+    'sleep_interval': 1,
+    'max_sleep_interval': 3,
 }
 
 # ----- Servir el frontend -----
@@ -122,7 +143,11 @@ def extract_video_info(url):
 
 def download_video(url, format_id=None, quality='720p'):
     output_template = str(DOWNLOAD_DIR / '%(title)s.%(ext)s')
-    ydl_opts = {**BASE_OPTS, 'outtmpl': output_template, 'restrictfilenames': True}
+    ydl_opts = {
+        **BASE_OPTS,
+        'outtmpl': output_template,
+        'restrictfilenames': True,
+    }
     if format_id == 'mp3':
         ydl_opts['format'] = 'bestaudio/best'
         ydl_opts['postprocessors'] = [{
@@ -152,7 +177,6 @@ def download_video(url, format_id=None, quality='720p'):
         return filepath
 
 def cleanup_old_files(max_age_minutes=60):
-    import time
     now = time.time()
     for f in DOWNLOAD_DIR.glob('*'):
         if f.is_file() and (now - f.stat().st_mtime) > (max_age_minutes * 60):
@@ -165,6 +189,9 @@ def cleanup_old_files(max_age_minutes=60):
 # Manejo de señales para que el contenedor no muera abruptamente
 def handle_sigterm(*args):
     logger.info("Recibida señal de terminación. Cerrando...")
+    # Limpiar archivo temporal de cookies si se creó
+    if cookies_path and cookies_path != 'cookies.txt' and Path(cookies_path).exists():
+        Path(cookies_path).unlink()
     exit(0)
 
 signal.signal(signal.SIGTERM, handle_sigterm)
@@ -177,4 +204,3 @@ if __name__ == '__main__':
     logger.info("🌐 Escuchando en http://0.0.0.0:80")
     logger.info("="*50)
     app.run(host='0.0.0.0', port=80, debug=False, threaded=True)
-
