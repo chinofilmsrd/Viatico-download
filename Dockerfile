@@ -2,39 +2,25 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Instalar FFmpeg
-RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+# Instalar FFmpeg y limpiar caché para reducir tamaño
+RUN apt-get update && \
+    apt-get install -y ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copiar dependencias
+# Copiar archivo de dependencias
 COPY requirements.txt .
+
+# Instalar dependencias de Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar backend
+# Copiar el código del backend
 COPY backend.py .
 
-# Copiar frontend
+# Copiar el frontend (carpeta completa)
 COPY frontend ./frontend
 
+# Exponer el puerto 80 (Back4app espera este puerto por defecto)
 EXPOSE 80
 
-CMD ["python", "backend.py"]
-
-FROM python:3.11-slim
-
-WORKDIR /app
-
-RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# ---- Depuración ----
-RUN python --version
-RUN pip list
-# -------------------
-
-COPY backend.py .
-COPY frontend ./frontend
-
-EXPOSE 80
+# Comando de inicio
 CMD ["python", "backend.py"]
