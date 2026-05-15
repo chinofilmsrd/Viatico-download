@@ -1,12 +1,14 @@
-FROM node:18-bookworm
+FROM python:3.11-slim-bookworm
 
-# Instalar ffmpeg y wget para descargar la última versión de yt-dlp
+# Instalar nodejs y ffmpeg
 RUN apt-get update && \
-    apt-get install -y ffmpeg python3 wget && \
+    apt-get install -y curl ffmpeg && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# Descargar el binario oficial de Linux de yt-dlp
-RUN wget -O /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp && \
+# Instalar yt-dlp
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && \
     chmod a+rx /usr/local/bin/yt-dlp
 
 # Crear y usar la carpeta de la app
