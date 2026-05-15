@@ -1,4 +1,4 @@
-FROM node:18-bullseye
+FROM node:18-bookworm
 
 # Instalar ffmpeg y wget para descargar la última versión de yt-dlp
 RUN apt-get update && \
