@@ -51,7 +51,7 @@ app.post('/info', async (req, res) => {
         });
     } catch (error) {
         console.error('Error en /info:', error.message);
-        res.status(500).json({ error: 'No se pudo obtener la información del video. Youtube podría estar bloqueando la IP o el enlace no es válido.' });
+        res.status(500).json({ error: `Error: ${error.message}` });
     }
 });
 
