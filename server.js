@@ -35,12 +35,17 @@ fs.readdir(TEMP_DIR, (err, files) => {
 
 // Endpoint para obtener información del video
 app.post('/info', async (req, res) => {
+    console.log('--- Nueva petición a /info ---');
     try {
         const { url } = req.body;
+        console.log('URL recibida:', url);
         if (!url) return res.status(400).json({ error: 'Falta la URL' });
         
-        // yt-dlp (exe en Windows, global en Linux)
+        console.log('Ejecutando yt-dlp...');
+        const start = Date.now();
         const { stdout } = await execFileAsync(ytDlpCmd, ['--dump-json', url], { maxBuffer: 10 * 1024 * 1024 });
+        console.log(`yt-dlp terminó en ${(Date.now() - start)}ms`);
+        
         const info = JSON.parse(stdout);
         
         res.json({
@@ -50,7 +55,7 @@ app.post('/info', async (req, res) => {
             thumbnail: info.thumbnail
         });
     } catch (error) {
-        console.error('Error en /info:', error.message);
+        console.error('Error detallado en /info:', error);
         res.status(500).json({ error: `Error: ${error.message}` });
     }
 });
