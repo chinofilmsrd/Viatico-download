@@ -43,7 +43,7 @@ app.post('/info', async (req, res) => {
         
         console.log('Ejecutando yt-dlp...');
         const start = Date.now();
-        const { stdout } = await execFileAsync(ytDlpCmd, ['--dump-json', url], { maxBuffer: 10 * 1024 * 1024 });
+        const { stdout } = await execFileAsync(ytDlpCmd, ['--no-playlist', '--dump-json', url], { maxBuffer: 10 * 1024 * 1024 });
         console.log(`yt-dlp terminó en ${(Date.now() - start)}ms`);
         
         const info = JSON.parse(stdout);
@@ -73,7 +73,7 @@ app.post('/download', async (req, res) => {
         let expectedExt = '';
         
         // Obtener el título rápido
-        const { stdout: titleOut } = await execFileAsync(ytDlpCmd, ['--get-title', url]);
+        const { stdout: titleOut } = await execFileAsync(ytDlpCmd, ['--no-playlist', '--get-title', url]);
         const title = titleOut.trim().replace(/[^\w\s]/gi, '_') || 'video';
 
         if (format === 'mp3') {
